@@ -1,0 +1,14 @@
+{
+  "name": "julebu-clone",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "句乐部核心玩法复刻：中译英/听写打字练习 + 连击计分 + SSS 评级 + 间隔重复复习本",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "serve": "npx --yes serve . -l 8080",
+    "test": "node --test test/engine.test.mjs"
+  },
+  "keywords": ["english", "typing", "srs", "game", "webapp"],
+  "license": "MIT"
+}
