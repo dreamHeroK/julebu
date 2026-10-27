@@ -11,7 +11,7 @@ const KEY = 'julebu.app.v1';
 const DEFAULTS = {
   progress: {}, // `${packId}/${courseId}` → { best, lastScore, plays, lastAt }
   srs: {}, // sentenceKey → srs item
-  settings: { sound: true, comboAnim: true, rate: 1, showIpa: true },
+  settings: { sound: true, comboAnim: true, rate: 1, showIpa: true, wordHints: false },
   totals: { sessions: 0, sentences: 0, correct: 0, seconds: 0, words: 0 },
 };
 

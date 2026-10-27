@@ -685,3 +685,28 @@ kbd {
 .pack-tab:hover { color: var(--fg); border-color: #3c3c45; }
 .pack-tab.active { background: var(--purple); border-color: var(--purple); color: #fff; }
 .pack-next { margin-bottom: 14px; }
+
+/* 下划线输入：不再是方框，下划线宽度随输入内容伸长 */
+.wb.wb-input,
+.wb.wb-input.chunk-start, .wb.wb-input.chunk-mid, .wb.wb-input.chunk-end {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  padding: 0 3px;
+  border-bottom: 3px solid #3a3a42;
+  transition: width .12s ease-out, border-color .18s, color .18s;
+}
+.wb.wb-input.pending { color: transparent; }
+.wb.wb-input.current { border-bottom-color: var(--purple); }
+.wb.wb-input.done { border-bottom-color: #2c2c33; color: var(--fg); }
+.wb.wb-input.error { border-bottom-color: #ef4444; color: #f87171; }
+
+/* 句子在上、输入在下，整体放大；逐词音标/释义默认隐藏 */
+.sentence-wrap { gap: 40px; }
+.zh-line { font-size: clamp(22px, 2.6vw, 32px); color: var(--fg); max-width: 960px; margin-top: 0; }
+.wb.wb-input { height: 78px; font-size: clamp(32px, 4.4vw, 54px); }
+.stage:not(.show-word-hints) .cell .ipa,
+.stage:not(.show-word-hints) .cell .meta { display: none; }
+@media (max-width: 720px) {
+  .wb.wb-input { height: 60px; }
+}

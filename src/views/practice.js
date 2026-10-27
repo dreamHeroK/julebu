@@ -15,7 +15,7 @@ import {
 } from '../core/scoring.js';
 import { speak } from '../core/speech.js';
 import * as sfx from '../core/sfx.js';
-import { touchSentence, recordCourseResult, getState } from '../store.js';
+import { touchSentence, recordCourseResult, getState, updateSettings } from '../store.js';
 import { QUOTES, PACKS } from '../data/courses.js';
 
 const PALETTE = 8;
@@ -62,16 +62,24 @@ export function mountPractice(root, opts) {
 
   const hintBar = h('footer', { class: 'khint' });
 
+  // 逐词音标/词性/释义默认隐藏，点按钮切换，选择会记住
   const stage = h('main', { class: 'stage' }, [
     comboLayer,
-    h('div', { class: 'sentence-wrap' }, [wordsEl, zhEl]),
+    h('div', { class: 'sentence-wrap' }, [zhEl, wordsEl]),
   ]);
+  const wordHintsBtn = h('button', { class: 'mode-btn', onclick: () => setWordHints(!getState().settings.wordHints) }, '');
+  function setWordHints(on) {
+    updateSettings({ wordHints: on });
+    stage.classList.toggle('show-word-hints', on);
+    wordHintsBtn.textContent = on ? '隐藏释义' : '显示释义';
+  }
+  setWordHints(!!getState().settings.wordHints);
 
   const view = h('div', { class: 'practice' }, [
     h('header', { class: 'pbar' }, [
       h('button', { class: 'icon-btn', title: '退出练习 (Esc)', onclick: () => exit() }, '✕'),
       titleEl,
-      h('div', { class: 'pbar-right' }, [modeBtn, scoreEl, timerEl]),
+      h('div', { class: 'pbar-right' }, [wordHintsBtn, modeBtn, scoreEl, timerEl]),
     ]),
     h('div', { class: 'progress-track' }, [fillEl]),
     stage,
@@ -122,6 +130,7 @@ export function mountPractice(root, opts) {
         spellcheck: 'false',
       });
       inp.addEventListener('keydown', onWordKey);
+      inp.addEventListener('input', () => fitWidth(wordItems[i]));
 
       const meta = dictation
         ? null
@@ -178,12 +187,22 @@ export function mountPractice(root, opts) {
       widths = measureAt(fs);
     }
 
-    const k = fs / base;
-    wordItems.forEach((item, i) => {
+    // 字号仍按整句答案长度收敛（打完能一行放下），下划线宽度只跟已输入内容走，不泄露单词长度
+    sizeInputs.font = `${weight} ${fs}px ${family}`;
+    sizeInputs.fs = fs;
+    wordItems.forEach((item) => {
       item.inp.style.fontSize = `${fs.toFixed(1)}px`;
-      item.inp.style.padding = `0 ${Math.round(13 * k)}px`;
-      item.inp.style.width = `${Math.floor(widths[i])}px`;
+      fitWidth(item);
     });
+  }
+
+  /** 下划线随输入变长：宽度 = 已输入文字宽度，空的时候留一个最小宽度 */
+  function fitWidth(item) {
+    if (!item || !sizeInputs.font) return;
+    const ctx = sizeInputs._ctx;
+    ctx.font = sizeInputs.font;
+    const textW = Math.ceil(ctx.measureText(item.inp.value).width);
+    item.inp.style.width = `${Math.max(sizeInputs.fs * 1.4, textW + 8)}px`;
   }
 
   let resizeTimer = 0;
@@ -211,7 +230,10 @@ export function mountPractice(root, opts) {
 
       inp.readOnly = isDone || finished;
       const want = isDone ? w.t : w.status === 'error' ? w.typed : isCur ? engine.state.buffer : '';
-      if (inp.value !== want) inp.value = want;
+      if (inp.value !== want) {
+        inp.value = want;
+        fitWidth(item);
+      }
     });
 
     if (resultOpen) return;
