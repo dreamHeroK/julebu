@@ -1,6 +1,7 @@
 import { VOCAB_PACK } from './vocab.js';
 import { EXTRA_PACKS } from './packs-extra.js';
 import { CAREER_PACKS } from './packs-career.js';
+import { READING_PACK } from './packs-reading.js';
 
 /**
  * 课程内容
@@ -122,6 +123,7 @@ export const PACKS = [
   },
   ...EXTRA_PACKS,
   ...CAREER_PACKS,
+  READING_PACK,
   {
     id: 'grammar',
     title: '语法精讲',
