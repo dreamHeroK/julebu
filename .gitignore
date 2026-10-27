@@ -1,0 +1,22 @@
+# 依赖与构建产物（项目零依赖，防 npx/工具误生成）
+node_modules/
+dist/
+.cache/
+
+# 逆向/调试过程产物（REA 截图、eval 脚本、工具记忆）
+.workbuddy/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+*:Zone.Identifier
+
+# 日志与本地环境
+*.log
+npm-debug.log*
+.env
+.env.*
