@@ -1,3 +1,5 @@
+import { s } from './lexicon.js';
+
 /**
  * 词汇拓展课程 —— 数据来源：julebu.co/learn 词汇资源（逆向提取）
  * ---------------------------------------------------------------------------
@@ -9,14 +11,6 @@
  */
 
 /** 与 courses.js 相同的句子构造器（本地副本，避免循环导入） */
-function s(en, zh, words) {
-  return {
-    en,
-    zh,
-    w: words.map(([t, ipa, pos, cn, chunk]) => ({ t, ipa, pos, cn, chunk })),
-  };
-}
-
 export const VOCAB_PACK = {
   id: 'vocabulary',
   title: '词汇拓展',

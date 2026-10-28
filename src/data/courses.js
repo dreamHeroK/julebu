@@ -2,6 +2,8 @@ import { VOCAB_PACK } from './vocab.js';
 import { EXTRA_PACKS } from './packs-extra.js';
 import { CAREER_PACKS } from './packs-career.js';
 import { READING_PACK } from './packs-reading.js';
+import { SCENES_PACKS } from './packs-scenes.js';
+import { s } from './lexicon.js';
 
 /**
  * 课程内容
@@ -15,13 +17,6 @@ import { READING_PACK } from './packs-reading.js';
  * 词性/音标/释义三行提示是原站的核心设计：给你读音和意思，但不给拼写。
  */
 
-function s(en, zh, words) {
-  return {
-    en,
-    zh,
-    w: words.map(([t, ipa, pos, cn, chunk]) => ({ t, ipa, pos, cn, chunk })),
-  };
-}
 
 /** 课程包集合（词汇拓展来自 /learn 逆向资源，拓展包题材参考 /mall 课程包商城分类） */
 export const PACKS = [
@@ -263,6 +258,7 @@ export const PACKS = [
     ],
   },
   VOCAB_PACK,
+  ...SCENES_PACKS,
 ];
 
 /** 结算页「今日金句」候选 */

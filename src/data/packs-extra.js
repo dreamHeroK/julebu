@@ -1,3 +1,5 @@
+import { s } from './lexicon.js';
+
 /**
  * 拓展课程包 —— 题材划分参考 julebu.co/mall 课程包商城：
  * 精选课程按人群/场景分类（旅行、职场、四六级备考、教材同步）。
@@ -7,14 +9,6 @@
  *   zh  整句中文
  *   w   逐词数组 [英文, 音标, 词性, 中文释义, 语块编号]
  */
-
-function s(en, zh, words) {
-  return {
-    en,
-    zh,
-    w: words.map(([t, ipa, pos, cn, chunk]) => ({ t, ipa, pos, cn, chunk })),
-  };
-}
 
 /** 旅行英语 */
 export const TRAVEL_PACK = {

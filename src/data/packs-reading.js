@@ -1,17 +1,11 @@
+import { s } from './lexicon.js';
+
 /**
  * 双语读物 —— 用故事练句子。
  * 版权说明：哈利·波特、狮子王为受版权保护作品，这里只用原创英文复述剧情，不摘录原文；
  * 爱丽丝梦游仙境（1865）、绿野仙踪（1900）、伊索寓言均为公有领域，可用原句。
  * 数据结构与 courses.js 完全一致：[英文, 音标, 词性, 中文释义, 语块编号]
  */
-
-function s(en, zh, words) {
-  return {
-    en,
-    zh,
-    w: words.map(([t, ipa, pos, cn, chunk]) => ({ t, ipa, pos, cn, chunk })),
-  };
-}
 
 export const READING_PACK = {
   id: 'reading',

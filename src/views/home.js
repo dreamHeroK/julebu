@@ -2,7 +2,7 @@ import { h } from '../dom.js';
 import { nav } from './nav.js';
 import { PACKS } from '../data/courses.js';
 import { overview, courseProgress, getState, updateSettings } from '../store.js';
-import { fmtDuration, fmtNum } from '../core/scoring.js';
+import { fmtDuration } from '../core/scoring.js';
 
 /** 包内下一课：第一节没练过的；都练过就挑第一节还没到 SSS 的；全 SSS 从头再来 */
 export function nextCourse(pack) {
@@ -13,170 +13,114 @@ export function nextCourse(pack) {
   );
 }
 
+/** 首页分组；没列进来的新包自动归到最后一组 */
+const GROUPS = [
+  ['基础', ['daily', 'kids', 'grammar', 'vocabulary']],
+  ['生活场景', ['travel', 'scenes', 'scene-food', 'scene-family', 'scene-transport', 'scene-school']],
+  ['职场', ['work', 'dev', 'business', 'medical', 'finance']],
+  ['考试与阅读', ['exam', 'cet', 'ielts', 'reading']],
+];
+export function groupPacks() {
+  const listed = new Set(GROUPS.flatMap(([, ids]) => ids));
+  const groups = GROUPS.map(([name, ids]) => [name, ids.map((id) => PACKS.find((p) => p.id === id)).filter(Boolean)]);
+  groups[groups.length - 1][1].push(...PACKS.filter((p) => !listed.has(p.id)));
+  return groups;
+}
+
+const go = (pack, course) => {
+  location.hash = `#/course/${pack.id}/${course.id}`;
+};
+const doneCount = (pack) => pack.courses.filter((c) => courseProgress(pack.id, c.id)).length;
+
 export function mountHome(root) {
   const ov = overview();
   let pack = PACKS.find((p) => p.id === getState().settings.pack) || PACKS[0];
-  const startNext = () => {
-    location.hash = `#/course/${pack.id}/${nextCourse(pack).id}`;
-  };
-  const practiceMs = ov.seconds;
 
-  const statCell = (v, k) =>
-    h('div', { class: 'stat-cell' }, [
-      h('div', { class: 'v' }, v),
-      h('div', { class: 'k' }, k),
-    ]);
+  const continueCard = h('section', { class: 'home-next' });
+  const courseBox = h('section', { class: 'home-courses' });
+  const tiles = new Map();
 
-  const courseCard = (pack, course) => {
-    const prog = courseProgress(pack.id, course.id);
-    const badge = prog?.best
-      ? h('span', { class: 'grade', 'data-g': prog.best }, prog.best)
-      : h('span', { class: 'grade-dash' }, '未开始');
+  function render() {
+    const nxt = nextCourse(pack);
+    continueCard.replaceChildren(
+      h('div', { class: 'home-next-main' }, [
+        h('div', { class: 'home-next-k' }, '继续学习'),
+        h('div', { class: 'home-next-t' }, `${pack.title} · ${nxt.name}`),
+        h(
+          'div',
+          { class: 'home-next-s' },
+          `已练 ${ov.tracked} 句 · 掌握度 ${ov.avgMastery}% · 累计 ${fmtDuration(ov.seconds)}`
+        ),
+      ]),
+      h('button', { class: 'btn btn-primary', onclick: () => go(pack, nxt) }, '开始练习 →'),
+      h(
+        'button',
+        { class: 'btn btn-ghost', onclick: () => (location.hash = '#/review') },
+        ov.due > 0 ? `复习 ${ov.due} 句` : '复习本'
+      )
+    );
 
-    return h(
+    courseBox.replaceChildren(
+      h('div', { class: 'home-courses-head' }, `${pack.title} · ${pack.desc}`),
+      h(
+        'div',
+        { class: 'home-course-grid' },
+        pack.courses.map((c) => {
+          const best = courseProgress(pack.id, c.id)?.best;
+          return h('button', { class: 'home-course' + (c === nxt ? ' next' : ''), onclick: () => go(pack, c) }, [
+            h('span', { class: 'home-course-name' }, c.name),
+            best
+              ? h('span', { class: 'grade', 'data-g': best }, best)
+              : h('span', { class: 'grade-dash' }, `${c.sentences.length} 句`),
+          ]);
+        })
+      )
+    );
+
+    tiles.forEach((el, p) => el.classList.toggle('active', p === pack));
+  }
+
+  const tile = (p) => {
+    const done = doneCount(p);
+    const el = h(
       'button',
       {
-        class: 'course-card',
+        class: 'home-pack',
         onclick: () => {
-          location.hash = `#/course/${pack.id}/${course.id}`;
+          pack = p;
+          updateSettings({ pack: p.id });
+          render();
         },
       },
       [
-        h('span', { class: 'course-idx' }, String(course.sentences.length)),
-        h('span', { class: 'course-main' }, [
-          h('span', { class: 'course-name' }, course.name),
-          h(
-            'span',
-            { class: 'course-sub' },
-            prog
-              ? `${prog.plays} 次练习 · 最高 ${fmtNum(prog.lastScore)} 分`
-              : `${course.sentences.length} 个句子 · 约 ${Math.round(
-                  course.sentences.length * 0.4
-                )} 分钟`
-          ),
-        ]),
-        h('span', { class: 'course-badge' }, badge),
+        h('span', { class: 'home-pack-t' }, p.title),
+        h('span', { class: 'home-pack-s' }, `${done}/${p.courses.length}`),
+        h('span', { class: 'home-pack-bar', style: { width: `${(done / p.courses.length) * 100}%` } }),
       ]
     );
+    tiles.set(p, el);
+    return el;
   };
-
-  const tabs = h(
-    'div',
-    { class: 'pack-tabs' },
-    PACKS.map((p) =>
-      h(
-        'button',
-        {
-          class: 'pack-tab' + (p === pack ? ' active' : ''),
-          onclick: (e) => {
-            pack = p;
-            updateSettings({ pack: p.id });
-            tabs.querySelector('.active')?.classList.remove('active');
-            e.currentTarget.classList.add('active');
-            renderPack();
-          },
-        },
-        p.title
-      )
-    )
-  );
-
-  const packSection = h('section', { class: 'pack' });
-  function renderPack() {
-    const nxt = nextCourse(pack);
-    const done = pack.courses.filter((c) => courseProgress(pack.id, c.id)).length;
-    packSection.replaceChildren(
-      h('div', { class: 'pack-head' }, [
-        h('span', { class: 'pack-title' }, pack.title),
-        h('span', { class: 'pack-tag' }, pack.tag),
-        h('span', { class: 'pack-meta' }, `${pack.desc} · 已学 ${done}/${pack.courses.length} 课`),
-      ]),
-      h('button', { class: 'btn btn-primary btn-sm pack-next', onclick: startNext }, `继续学习：${nxt.name} →`),
-      h('div', { class: 'course-list' }, pack.courses.map((c) => courseCard(pack, c)))
-    );
-  }
-  renderPack();
 
   const page = h('div', {}, [
     nav('home'),
-    h('div', { class: 'container' }, [
-      h('section', { class: 'hero' }, [
-        h('h1', { html: '像玩游戏一样，<em>用句子学英语</em>' }),
-        h(
-          'p',
-          {},
-          '看中文，敲英文。连对越多，得分越高，Perfect 与连击一路冲上 SSS。'
-        ),
-        h('div', { class: 'hero-cta' }, [
-          h(
-            'button',
-            {
-              class: 'btn btn-primary',
-              onclick: startNext,
-            },
-            '继续学习'
-          ),
-          h(
-            'button',
-            {
-              class: 'btn btn-ghost',
-              onclick: () => {
-                location.hash = '#/review';
-              },
-            },
-            ov.due > 0 ? `复习本（${ov.due}）` : '复习本'
-          ),
-        ]),
-      ]),
-
-      h('div', { class: 'stats-row' }, [
-        statCell(ov.tracked, '已练句子'),
-        statCell(`${ov.avgMastery}%`, '平均掌握度'),
-        statCell(ov.due, '今日待复习'),
-        statCell(fmtDuration(practiceMs), '累计练习'),
-      ]),
-
-      h('div', { class: 'section-head' }, [
-        h('h2', {}, '课程'),
-        h('span', { class: 'hint' }, '选一个课程包，点「继续学习」自动进入下一课，进度自动保存'),
-      ]),
-
-      tabs,
-      packSection,
-
-      h('div', { class: 'section-head' }, [
-        h('h2', {}, '怎么玩'),
-        h('span', { class: 'hint' }, '核心机制还原自 julebu.co'),
-      ]),
+    h('div', { class: 'container home' }, [
+      continueCard,
       h(
         'div',
-        { class: 'course-list' },
-        [
-          ['看中文，敲英文', '屏幕上只给中文和逐词的音标、词性、释义——拼写要自己打出来。'],
-          ['首答正确才有 Perfect', '一次打对、不按退格、不看提示 = Perfect；退格过 = Great。'],
-          ['连击越高分越高', '连对 3 次 +10%，5 次 +20%，7 次 +30%，10 次 +50%，15 次 +80%，20 次翻倍。'],
-          ['SSS 才是真的会', '几乎每题都首答正确，评级才会冲到 SSS。'],
-          ['自动安排复习', '练过的句子按间隔重复算法排队，到期就出现在复习本里。'],
-        ].map(([t, d]) =>
-          h('div', { class: 'card', style: { padding: '16px 18px' } }, [
-            h('div', { style: { fontSize: '14px', fontWeight: '600' } }, t),
-            h(
-              'div',
-              { style: { fontSize: '12.5px', color: 'var(--fg-dim)', marginTop: '6px', lineHeight: '1.65' } },
-              d
-            ),
+        { class: 'home-groups' },
+        groupPacks().map(([name, packs]) =>
+          h('div', { class: 'home-group' }, [
+            h('div', { class: 'home-group-k' }, name),
+            h('div', { class: 'home-group-v' }, packs.map(tile)),
           ])
         )
       ),
-
-      h(
-        'div',
-        { style: { margin: '56px 0 0', textAlign: 'center', fontSize: '12px', color: 'var(--fg-faint)' } },
-        '机制与视觉参考自 julebu.co，仅用于学习与技术研究。所有数据保存在你自己的浏览器里。'
-      ),
+      courseBox,
     ]),
   ]);
 
+  render();
   root.appendChild(page);
   return {};
 }

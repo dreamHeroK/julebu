@@ -277,3 +277,22 @@ test('nextCourse：先未练过的课，再未到 SSS 的课，全 SSS 回到第
   assert.equal(nextCourse(pack).id, c0.id);
   resetAll();
 });
+
+test('词典写法：语块字符串自动查词，支持覆盖，缺词/不一致直接报错', async () => {
+  const { s } = await import('../src/data/lexicon.js');
+  const a = s('Nice to meet you.', '很高兴认识你。', 'Nice to | meet | you');
+  assert.deepEqual(a.w.map((w) => [w.t, w.chunk]), [['Nice', 0], ['to', 0], ['meet', 1], ['you', 2]]);
+  assert.ok(a.w.every((w) => w.ipa && w.pos && w.cn));
+
+  const b = s('I want to book a room.', '我想订个房间。', 'I want | to book | a room', { book: ['/bʊk/', '动词', '预订'] });
+  assert.equal(b.w[3].cn, '预订');
+
+  assert.throws(() => s('Zyxq is here.', '', 'Zyxq | is here'), /词典缺词「Zyxq」/);
+  assert.throws(() => s('Nice to meet you.', '', 'Nice to | you'), /语块与句子不一致/);
+});
+
+test('首页分组：每个课程包恰好出现一次', async () => {
+  const { groupPacks } = await import('../src/views/home.js');
+  const ids = groupPacks().flatMap(([, packs]) => packs.map((p) => p.id));
+  assert.deepEqual([...ids].sort(), PACKS.map((p) => p.id).sort());
+});

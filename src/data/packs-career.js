@@ -1,3 +1,5 @@
+import { s } from './lexicon.js';
+
 /**
  * 职业 / 考试分类词库 —— 软件工程师、商务英语、四六级核心词汇。
  * 数据结构与 courses.js 完全一致：
@@ -7,13 +9,6 @@
  * 每句围绕一个该领域的高频词/表达。
  */
 
-function s(en, zh, words) {
-  return {
-    en,
-    zh,
-    w: words.map(([t, ipa, pos, cn, chunk]) => ({ t, ipa, pos, cn, chunk })),
-  };
-}
 
 /** 软件工程师 */
 export const DEV_PACK = {
